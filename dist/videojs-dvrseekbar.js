@@ -23,6 +23,44 @@ var defaults = {
   startTime: 0
 };
 
+var Slider = _videoJs2['default'].getComponent('Slider');
+
+Slider.prototype.update = function update() {
+  // In VolumeBar init we have a setTimeout for update that pops and update to the end of the
+  // execution stack. The player is destroyed before then update will cause an error
+  if (!this.el_) {
+    return;
+  }
+
+  // If scrubbing, we could use a cached value to make the handle keep up with the user's mouse.
+  // On HTML5 browsers scrubbing is really smooth, but some flash players are slow, so we might want to utilize this later.
+  // var progress =  (this.player_.scrubbing()) ? this.player_.getCache().currentTime / this.player_.duration() : this.player_.currentTime() / this.player_.duration();
+  var progress = this.getPercent();
+  var bar = this.bar;
+
+  // If there's no bar...
+  if (!bar) {
+    return;
+  }
+
+  // Protect against no duration and other division issues
+  if (typeof progress !== 'number' || progress !== progress || progress < 0 || progress === Infinity) {
+    progress = 0;
+  }
+
+  // Convert to a percentage for setting
+  var percentage = (progress * 100).toFixed(2) + '%';
+
+  // Set the new bar width or height
+  if (progress != 0) {
+    if (this.vertical()) {
+      bar.el().style.height = percentage;
+    } else {
+      bar.el().style.width = percentage;
+    }
+  }
+};
+
 var SeekBar = _videoJs2['default'].getComponent('SeekBar');
 
 SeekBar.prototype.dvrTotalTime = function (player) {

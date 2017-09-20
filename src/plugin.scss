@@ -102,3 +102,36 @@
     background-color: #46a546;
   }
 }
+
+.vjs-dvrseekbar {
+  .vjs-dvrseekbar-progress-control {
+    display: flex !important;
+  }
+
+  .vjs-live-button {
+    width: auto !important;
+    cursor: pointer;
+  }
+
+  .vjs-live-button .label,
+  .vjs-live-button .vjs-live-label {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    font-size: .7em;
+    padding-left: 6px;
+    padding-right: 6px;
+    height: 100%;
+  }
+
+  .vjs-live-control {
+    display: none;
+  }
+
+  .vjs-remaining-time {
+    display: none;
+  }
+}

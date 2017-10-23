@@ -126,6 +126,7 @@ const onPlayerReady = (player, options) => {
   }
 
   let clickHandler = function(e) {
+    player.pause();
     player.currentTime(player.seekable().end(0));
     player.play();
   };

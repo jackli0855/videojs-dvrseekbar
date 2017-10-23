@@ -144,6 +144,7 @@ var onPlayerReady = function onPlayerReady(player, options) {
   }
 
   var clickHandler = function clickHandler(e) {
+    player.pause();
     player.currentTime(player.seekable().end(0));
     player.play();
   };

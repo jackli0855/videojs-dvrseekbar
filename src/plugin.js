@@ -4,6 +4,74 @@ const defaults = {
   startTime: 0
 };
 
+const seconds2time = (seconds) => {
+    var originSd = seconds;
+    if (seconds < 0) {
+      seconds = Math.abs(seconds);
+    }
+    var hours   = Math.floor(seconds / 3600);
+    var minutes = Math.floor((seconds - (hours * 3600)) / 60);
+    var seconds = seconds - (hours * 3600) - (minutes * 60);
+    var time = "";
+
+    if (hours != 0) {
+      time = hours+":";
+    }
+    if (minutes != 0 || time !== "") {
+      minutes = (minutes < 10 && time !== "") ? "0"+minutes : String(minutes);
+      time += minutes+":";
+    }
+    if (time === "") {
+      time = seconds+"s";
+    }
+    else {
+      time += (seconds < 10) ? "0"+seconds : String(seconds);
+    }
+    if (originSd < 0) {
+      time = "-"+time;
+    }
+    return time;
+}
+
+const Slider = videojs.getComponent('Slider');
+
+Slider.prototype.update = function update() {
+  // In VolumeBar init we have a setTimeout for update that pops and update to the end of the
+  // execution stack. The player is destroyed before then update will cause an error
+  if (!this.el_) {
+    return;
+  }
+
+  // If scrubbing, we could use a cached value to make the handle keep up with the user's mouse.
+  // On HTML5 browsers scrubbing is really smooth, but some flash players are slow, so we might want to utilize this later.
+  // var progress =  (this.player_.scrubbing()) ? this.player_.getCache().currentTime / this.player_.duration() : this.player_.currentTime() / this.player_.duration();
+  let progress = this.getPercent();
+  let bar = this.bar;
+
+  // If there's no bar...
+  if (!bar) {
+    return;
+  }
+
+  // Protect against no duration and other division issues
+  if (typeof progress !== 'number' || progress !== progress || progress < 0 || progress === Infinity) {
+    progress = 0;
+  }
+
+  // Convert to a percentage for setting
+  let percentage = (progress * 100).toFixed(2) + '%';
+
+  // Set the new bar width or height
+  if(progress != 0) {
+    if (this.vertical()) {
+      bar.el().style.height = percentage;
+    } else {
+      bar.el().style.width = percentage;
+    }
+  }
+};
+
+
 const SeekBar = videojs.getComponent('SeekBar');
 
 SeekBar.prototype.dvrTotalTime = function(player) {
@@ -79,15 +147,20 @@ const onPlayerReady = (player, options) => {
 
   btnLiveEl.className = 'vjs-live-button vjs-control';
 
-  newLink.innerHTML = document.getElementsByClassName('vjs-live-display')[0].innerHTML;
+  var pre_innerHTML = '<span class="live-control-indicator"><i class="fa fa-circle"></i></span>';
+  var delayTime = '<span class="live-control-delay"></span>';
+  newLink.innerHTML = pre_innerHTML + document.getElementsByClassName('vjs-live-display')[0].innerHTML + delayTime;
   newLink.id = 'liveButton';
 
   if (!player.paused()) {
     newLink.className = 'vjs-live-label onair';
+    // newLink.className = 'live-control-indicator inactive';
   }
 
   let clickHandler = function(e) {
+    player.pause();
     player.currentTime(player.seekable().end(0));
+    let indicatorEl = document.getElementsByClassName('live-control-indicator')[0];
     player.play();
   };
 
@@ -114,7 +187,9 @@ const onPlayerReady = (player, options) => {
 const onTimeUpdate = (player, e) => {
   let time = player.seekable();
   let btnLiveEl = document.getElementById('liveButton');
-
+  let delayTimeEl = document.getElementsByClassName('live-control-delay')[0];
+  let indicatorEl = document.getElementsByClassName('live-control-indicator')[0];
+    
   // When any tech is disposed videojs will trigger a 'timeupdate' event
   // when calling stopTrackingCurrentTime(). If the tech does not have
   // a seekable() method, time will be undefined
@@ -123,12 +198,24 @@ const onTimeUpdate = (player, e) => {
   }
 
   player.duration(player.seekable().end(0));
-
-  if (time.end(0) - player.currentTime() < 30) {
-    btnLiveEl.className = 'label onair';
+  let delayTimeSd = parseInt(player.currentTime() - time.end(0));
+  // console.log("delayTimeSd:"+delayTimeSd);
+  if (delayTimeSd < -20) {
+    delayTimeEl.innerHTML = seconds2time(delayTimeSd);
+    // btnLiveEl.className = 'label inactive';
+    indicatorEl.className = 'live-control-indicator inactive';
+    // newLink.innerHTML = newLink.innerHTML + delayTimeEl;
   } else {
-    btnLiveEl.className = 'label';
+    // btnLiveEl.className = 'label active';
+    indicatorEl.className = 'live-control-indicator active';
+    delayTimeEl.innerHTML = '';
   }
+
+  // if (delayTimeSd < 30) {
+  //   btnLiveEl.className = 'label onair';
+  // } else {
+  //   btnLiveEl.className = 'label';
+  // }
 
   player.duration(player.seekable().end(0));
 };
@@ -157,9 +244,11 @@ const dvrseekbar = function(options) {
   this.on('play', (e) => {});
 
   this.on('pause', (e) => {
-    let btnLiveEl = document.getElementById('liveButton');
+    // let btnLiveEl = document.getElementById('liveButton');
 
-    btnLiveEl.className = 'vjs-live-label';
+    // btnLiveEl.className = 'vjs-live-label';
+    let delayTimeEl = document.getElementsByClassName('live-control-indicator')[0];
+    delayTimeEl.className = 'live-control-indicator inactive';
   });
 
   this.ready(() => {

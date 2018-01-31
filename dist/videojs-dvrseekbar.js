@@ -1,18 +1,26 @@
 /**
  * videojs-dvrseekbar
  * @version 0.2.6
- * @copyright 2017 ToolBox-tve
+ * @copyright 2018 ToolBox-tve
  * @license Apache-2.0
  */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.videojsDvrseekbar = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
-'use strict';
+/**
+ * videojs-dvrseekbar
+ * @version 0.2.6
+ * @copyright 2018 ToolBox-tve
+ * @license Apache-2.0
+ */
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.videojsDvrseekbar = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function (global){
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
+Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 var _videoJs = (typeof window !== "undefined" ? window['videojs'] : typeof global !== "undefined" ? global['videojs'] : null);
 
@@ -23,7 +31,73 @@ var defaults = {
   startTime: 0
 };
 
-var SeekBar = _videoJs2['default'].getComponent('SeekBar');
+var seconds2time = function seconds2time(seconds) {
+  var originSd = seconds;
+  if (seconds < 0) {
+    seconds = Math.abs(seconds);
+  }
+  var hours = Math.floor(seconds / 3600);
+  var minutes = Math.floor((seconds - hours * 3600) / 60);
+  var seconds = seconds - hours * 3600 - minutes * 60;
+  var time = "";
+
+  if (hours != 0) {
+    time = hours + ":";
+  }
+  if (minutes != 0 || time !== "") {
+    minutes = minutes < 10 && time !== "" ? "0" + minutes : String(minutes);
+    time += minutes + ":";
+  }
+  if (time === "") {
+    time = seconds + "s";
+  } else {
+    time += seconds < 10 ? "0" + seconds : String(seconds);
+  }
+  if (originSd < 0) {
+    time = "-" + time;
+  }
+  return time;
+};
+
+var Slider = _videoJs2["default"].getComponent('Slider');
+
+Slider.prototype.update = function update() {
+  // In VolumeBar init we have a setTimeout for update that pops and update to the end of the
+  // execution stack. The player is destroyed before then update will cause an error
+  if (!this.el_) {
+    return;
+  }
+
+  // If scrubbing, we could use a cached value to make the handle keep up with the user's mouse.
+  // On HTML5 browsers scrubbing is really smooth, but some flash players are slow, so we might want to utilize this later.
+  // var progress =  (this.player_.scrubbing()) ? this.player_.getCache().currentTime / this.player_.duration() : this.player_.currentTime() / this.player_.duration();
+  var progress = this.getPercent();
+  var bar = this.bar;
+
+  // If there's no bar...
+  if (!bar) {
+    return;
+  }
+
+  // Protect against no duration and other division issues
+  if (typeof progress !== 'number' || progress !== progress || progress < 0 || progress === Infinity) {
+    progress = 0;
+  }
+
+  // Convert to a percentage for setting
+  var percentage = (progress * 100).toFixed(2) + '%';
+
+  // Set the new bar width or height
+  if (progress != 0) {
+    if (this.vertical()) {
+      bar.el().style.height = percentage;
+    } else {
+      bar.el().style.width = percentage;
+    }
+  }
+};
+
+var SeekBar = _videoJs2["default"].getComponent('SeekBar');
 
 SeekBar.prototype.dvrTotalTime = function (player) {
   var time = player.seekable();
@@ -65,7 +139,7 @@ SeekBar.prototype.updateAriaAttributes = function () {
     }
 
     // Update current time control
-    var formattedTime = _videoJs2['default'].formatTime(timeToLastSeekable, lastSeekableTime);
+    var formattedTime = _videoJs2["default"].formatTime(timeToLastSeekable, lastSeekableTime);
     var formattedPercentage = Math.round(100 * this.getPercent(), 2);
 
     this.el_.setAttribute('aria-valuenow', formattedPercentage);
@@ -98,15 +172,20 @@ var onPlayerReady = function onPlayerReady(player, options) {
 
   btnLiveEl.className = 'vjs-live-button vjs-control';
 
-  newLink.innerHTML = document.getElementsByClassName('vjs-live-display')[0].innerHTML;
+  var pre_innerHTML = '<span class="live-control-indicator"><i class="fa fa-circle"></i></span>';
+  var delayTime = '<span class="live-control-delay"></span>';
+  newLink.innerHTML = pre_innerHTML + document.getElementsByClassName('vjs-live-display')[0].innerHTML + delayTime;
   newLink.id = 'liveButton';
 
   if (!player.paused()) {
     newLink.className = 'vjs-live-label onair';
+    // newLink.className = 'live-control-indicator inactive';
   }
 
   var clickHandler = function clickHandler(e) {
+    player.pause();
     player.currentTime(player.seekable().end(0));
+    var indicatorEl = document.getElementsByClassName('live-control-indicator')[0];
     player.play();
   };
 
@@ -127,12 +206,14 @@ var onPlayerReady = function onPlayerReady(player, options) {
 
   controlBar.insertBefore(btnLiveEl, insertBeforeNode);
 
-  _videoJs2['default'].log('dvrSeekbar Plugin ENABLED!', options);
+  _videoJs2["default"].log('dvrSeekbar Plugin ENABLED!', options);
 };
 
 var onTimeUpdate = function onTimeUpdate(player, e) {
   var time = player.seekable();
   var btnLiveEl = document.getElementById('liveButton');
+  var delayTimeEl = document.getElementsByClassName('live-control-delay')[0];
+  var indicatorEl = document.getElementsByClassName('live-control-indicator')[0];
 
   // When any tech is disposed videojs will trigger a 'timeupdate' event
   // when calling stopTrackingCurrentTime(). If the tech does not have
@@ -142,12 +223,24 @@ var onTimeUpdate = function onTimeUpdate(player, e) {
   }
 
   player.duration(player.seekable().end(0));
-
-  if (time.end(0) - player.currentTime() < 30) {
-    btnLiveEl.className = 'label onair';
+  var delayTimeSd = parseInt(player.currentTime() - time.end(0));
+  // console.log("delayTimeSd:"+delayTimeSd);
+  if (delayTimeSd < -20) {
+    delayTimeEl.innerHTML = seconds2time(delayTimeSd);
+    // btnLiveEl.className = 'label inactive';
+    indicatorEl.className = 'live-control-indicator inactive';
+    // newLink.innerHTML = newLink.innerHTML + delayTimeEl;
   } else {
-    btnLiveEl.className = 'label';
-  }
+      // btnLiveEl.className = 'label active';
+      indicatorEl.className = 'live-control-indicator active';
+      delayTimeEl.innerHTML = '';
+    }
+
+  // if (delayTimeSd < 30) {
+  //   btnLiveEl.className = 'label onair';
+  // } else {
+  //   btnLiveEl.className = 'label';
+  // }
 
   player.duration(player.seekable().end(0));
 };
@@ -178,24 +271,29 @@ var dvrseekbar = function dvrseekbar(options) {
   this.on('play', function (e) {});
 
   this.on('pause', function (e) {
-    var btnLiveEl = document.getElementById('liveButton');
+    // let btnLiveEl = document.getElementById('liveButton');
 
-    btnLiveEl.className = 'vjs-live-label';
+    // btnLiveEl.className = 'vjs-live-label';
+    var delayTimeEl = document.getElementsByClassName('live-control-indicator')[0];
+    delayTimeEl.className = 'live-control-indicator inactive';
   });
 
   this.ready(function () {
-    onPlayerReady(_this, _videoJs2['default'].mergeOptions(defaults, options));
+    onPlayerReady(_this, _videoJs2["default"].mergeOptions(defaults, options));
   });
 };
 
 // Register the plugin with video.js.
-_videoJs2['default'].plugin('dvrseekbar', dvrseekbar);
+_videoJs2["default"].plugin('dvrseekbar', dvrseekbar);
 
 // Include the version number.
 dvrseekbar.VERSION = '0.2.6';
 
-exports['default'] = dvrseekbar;
-module.exports = exports['default'];
+exports["default"] = dvrseekbar;
+module.exports = exports["default"];
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}]},{},[1])(1)
+});
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}]},{},[1])(1)
 });

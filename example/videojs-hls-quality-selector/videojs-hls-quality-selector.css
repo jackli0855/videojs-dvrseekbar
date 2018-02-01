@@ -1,0 +1,13 @@
+/**
+ * videojs-hls-quality-selector
+ * @version 0.0.2
+ * @copyright 2018 Chris Boustead (chris@forgemotion.com)
+ * @license MIT
+ */
+ 
+.video-js .vjs-control:before{
+  font-size: 1.8em;
+  line-height: 1.67;
+  text-align: center;
+}
+    

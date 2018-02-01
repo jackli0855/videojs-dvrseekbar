@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>videoJs</title>
+    <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
+    <link href="./font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script src="https://unpkg.com/video.js/dist/video.js"></script>
+    <script src="//unpkg.com/videojs-flash/dist/videojs-flash.min.js"></script>
+    <script src="https://unpkg.com/videojs-contrib-hls/dist/videojs-contrib-hls.js"></script>
+    
+    <script type="text/javascript" src="./contrib-quality-levels/videojs-contrib-quality-levels.min.js"></script>
+    <!-- <script type="text/javascript" src="./videojs-hls-source-selector.min.js"></script> -->
+    <link href="./videojs-hls-quality-selector/videojs-hls-quality-selector.css" rel="stylesheet">
+    <script type="text/javascript" src="./videojs-hls-quality-selector/videojs-hls-quality-selector.min.js"></script>
+
+    
+    <script type="text/javascript" src="./dvrseekbar/videojs-dvrseekbar.min.js"></script>
+    <link href="./dvrseekbar/videojs-dvrseekbar.css" rel="stylesheet">
+</head>
+
+<body>
+    <section id="videoPlayer">
+        <video id="example-video" width="600" height="300" class="video-js vjs-default-skin vjs-big-play-centered" poster="">
+          <source
+             src="//b028.wpc.azureedge.net/80B028/SampleStream/595d6b9a-d98e-4381-86a3-cb93664479c2/b722b983-af65-4bb3-950a-18dded2b7c9b.ism/Manifest(format=m3u8-aapl)"
+             type="application/x-mpegURL" id="target">
+          <!-- <source src="http://webrtc-dev.teamfw.net:1935/dvr/myStream/playlist.m3u8" type="application/x-mpegURL" id="target"> -->
+        </video> 
+    </section>
+
+    
+<script type="text/javascript">
+  var options = {
+    "preload":'auto',
+    controlBar: {
+      volumeMenuButton: {
+         vertical: true,
+         inline: false,
+         volumeBar: {
+             vertical: true
+         },
+         volumeLevel: true
+      }
+
+     }
+    };  
+  var player = videojs('example-video', {poster:"", controls:'true'}, function(){this.on('play',function(){
+          console.log('正在播放');
+        }); 
+
+       //暂停--播放完毕后也会暂停
+        this.on('pause',function(){
+                     console.log("暂停中")
+                }); 
+
+        // 结束
+        this.on('ended', function() {
+          console.log('结束');
+        })
+      
+  });
+  // player.controlBar.addChild('QualitySelector');
+  // player.dvrseekbar();
+  player.qualityLevels();
+  // player.hlsSourceSelector();
+  player.hlsQualitySelector();
+  player.dvrseekbar();
+  
+</script>
+</body>
+</html>
